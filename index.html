@@ -75,11 +75,27 @@
         .filter-pill {
             transition: all 0.3s ease;
             border: 1px solid rgba(255,255,255,0.1);
+            background: transparent;
+            color: #737373;
         }
         .filter-pill.active {
             background: white;
             color: black;
             border-color: white;
+        }
+
+        /* Search Overlay */
+        #search-overlay {
+            z-index: 150;
+        }
+        .search-input-wrap::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
         }
     </style>
 </head>
@@ -107,7 +123,8 @@
                     <a href="javascript:void(0)" onclick="showPage('contact')" class="nav-link hover:text-white transition-colors">Contact</a>
                 </div>
                 <div class="flex items-center space-x-6">
-                    <button class="text-neutral-400 hover:text-white transition-colors"><i class="fa-solid fa-magnifying-glass"></i></button>
+                    <!-- Search Button -->
+                    <button onclick="toggleSearch(true)" class="text-neutral-400 hover:text-white transition-colors"><i class="fa-solid fa-magnifying-glass"></i></button>
                     <button class="relative text-neutral-400 hover:text-white transition-colors">
                         <i class="fa-solid fa-bag-shopping"></i>
                         <span class="absolute -top-2 -right-2 bg-white text-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-black">2</span>
@@ -117,6 +134,35 @@
             </div>
         </div>
     </nav>
+
+    <!-- Search Overlay -->
+    <div id="search-overlay" class="fixed inset-0 bg-black/98 backdrop-blur-xl hidden flex flex-col pt-32 px-6">
+        <button onclick="toggleSearch(false)" class="absolute top-10 right-10 text-3xl hover:rotate-90 transition-transform"><i class="fa-solid fa-xmark"></i></button>
+        
+        <div class="max-w-4xl mx-auto w-full">
+            <div class="search-input-wrap relative mb-12">
+                <input type="text" id="search-input" placeholder="Search SHXDED..." oninput="handleSearch(this.value)" class="w-full bg-transparent text-4xl md:text-6xl font-black uppercase italic tracking-tighter placeholder:text-neutral-800 focus:outline-none py-4">
+                <i class="fa-solid fa-magnifying-glass absolute right-4 top-1/2 -translate-y-1/2 text-neutral-700 text-2xl"></i>
+            </div>
+
+            <div id="search-initial-view">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-8">Popular Searches</p>
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="handleQuickSearch('Hoodie')" class="border border-white/10 px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Drop 001 Hoodies</button>
+                    <button onclick="handleQuickSearch('Mocha')" class="border border-white/10 px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Signature Mocha</button>
+                    <button onclick="handleQuickSearch('Jogger')" class="border border-white/10 px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Tech Joggers</button>
+                    <button onclick="handleQuickSearch('Black')" class="border border-white/10 px-6 py-2 text-xs font-bold uppercase tracking-widest hover:bg-white hover:text-black transition-all">Stealth Series</button>
+                </div>
+            </div>
+
+            <div id="search-results-container" class="hidden">
+                <p class="text-[10px] font-bold uppercase tracking-widest text-neutral-500 mb-8">Results</p>
+                <div id="search-results-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 h-[50vh] overflow-y-auto no-scrollbar pb-20">
+                    <!-- Search Results Injected Here -->
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- Mobile Menu Overlay -->
     <div id="mobile-menu" class="fixed inset-0 z-[60] bg-black translate-x-full transition-transform duration-500 flex flex-col p-10">
@@ -130,11 +176,6 @@
             <a href="#" onclick="showPage('about'); toggleMobileMenu()">About</a>
             <a href="#" onclick="showPage('contact'); toggleMobileMenu()">Contact</a>
         </div>
-        <div class="mt-auto border-t border-white/10 pt-8 flex space-x-6 text-xl text-neutral-500">
-            <i class="fa-brands fa-instagram"></i>
-            <i class="fa-brands fa-tiktok"></i>
-            <i class="fa-brands fa-spotify"></i>
-        </div>
     </div>
 
     <!-- Main Content -->
@@ -144,7 +185,7 @@
         <section id="page-home" class="page-content">
             <!-- Hero -->
             <div class="relative h-[95vh] w-full flex items-center overflow-hidden">
-                <img src="https://res.cloudinary.com/day8mbtgw/image/upload/v1768665444/Gym_u4eu15.jpg?auto=format&fit=crop&q=90&w=2400" alt="Hero" class="absolute inset-0 w-full h-full object-cover scale-105 opacity-70">
+                <img src="https://res.cloudinary.com/day8mbtgw/image/upload/v1768665444/Gym_u4eu15.jpg" alt="Hero" class="absolute inset-0 w-full h-full object-cover scale-105 opacity-70">
                 <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-transparent to-black"></div>
                 <div class="relative z-10 max-w-7xl mx-auto px-6 w-full mt-20">
                     <p class="text-neutral-400 font-bold tracking-[0.4em] uppercase mb-6 reveal">Season 01 / Drop 001</p>
@@ -434,6 +475,68 @@
             menu.classList.toggle('translate-x-full');
         }
 
+        // Search Functionality
+        function toggleSearch(show) {
+            const overlay = document.getElementById('search-overlay');
+            const input = document.getElementById('search-input');
+            
+            if (show) {
+                overlay.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                setTimeout(() => input.focus(), 100);
+            } else {
+                overlay.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+                input.value = '';
+                handleSearch('');
+            }
+        }
+
+        function handleSearch(query) {
+            const initialView = document.getElementById('search-initial-view');
+            const resultsContainer = document.getElementById('search-results-container');
+            const grid = document.getElementById('search-results-grid');
+            
+            if (!query || query.length < 1) {
+                initialView.classList.remove('hidden');
+                resultsContainer.classList.add('hidden');
+                return;
+            }
+
+            initialView.classList.add('hidden');
+            resultsContainer.classList.remove('hidden');
+
+            const filtered = products.filter(p => 
+                p.name.toLowerCase().includes(query.toLowerCase()) || 
+                p.type.toLowerCase().includes(query.toLowerCase()) ||
+                p.color.toLowerCase().includes(query.toLowerCase())
+            );
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full py-20 text-center text-neutral-600 uppercase tracking-widest text-xs font-bold">No products found for "${query}"</div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map(p => `
+                <div class="product-card cursor-pointer group" onclick="toggleSearch(false); openProduct(${p.id})">
+                    <div class="relative aspect-[3/4] overflow-hidden bg-neutral-900 mb-4">
+                        <img src="${p.img}" class="w-full h-full object-cover transition duration-[1s] group-hover:scale-105">
+                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                    </div>
+                    <div>
+                        <h3 class="text-[10px] font-black uppercase tracking-widest mb-1">${p.name}</h3>
+                        <p class="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">$${p.price}.00</p>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function handleQuickSearch(query) {
+            const input = document.getElementById('search-input');
+            input.value = query;
+            handleSearch(query);
+        }
+
         // Shop Engine
         function renderProducts() {
             const grid = document.getElementById('product-grid');
@@ -493,7 +596,7 @@
                 </div>
                 <div class="p-12 lg:p-20 flex flex-col justify-center">
                     <p class="text-[10px] font-bold uppercase tracking-[0.5em] text-neutral-500 mb-6">Drop 001 / Edition ${p.id}</p>
-                    <h2 class="text-5xl font-black uppercase italic mb-8">${p.name}</h2>
+                    <h2 class="text-5xl font-black uppercase italic mb-8 tracking-tighter">${p.name}</h2>
                     <p class="text-3xl font-light text-neutral-400 mb-10">$${p.price}.00</p>
                     <p class="text-neutral-500 leading-relaxed mb-12">${p.desc}</p>
                     
@@ -545,6 +648,14 @@
             handleReveal();
             showPage('home');
         };
+
+        // Close search on Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                toggleSearch(false);
+                closeProductModal();
+            }
+        });
     </script>
 </body>
 </html>
